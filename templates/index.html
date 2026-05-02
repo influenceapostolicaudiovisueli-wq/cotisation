@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NEXUS API UI</title>
+
+<style>
+body{
+    background:#050810;
+    color:#00f5ff;
+    font-family:Arial;
+    padding:20px;
+}
+h1{color:#00f5ff}
+.card{
+    border:1px solid #00f5ff33;
+    padding:15px;
+    margin-bottom:15px;
+    border-radius:8px;
+}
+input,button{
+    padding:10px;
+    margin:5px;
+    background:#0c1220;
+    border:1px solid #00f5ff33;
+    color:white;
+}
+button{cursor:pointer}
+</style>
+</head>
+
+<body>
+
+<h1>NEXUS — Interface API</h1>
+
+<!-- DASHBOARD -->
+<div class="card">
+<h2>Dashboard</h2>
+<button onclick="loadDashboard()">Actualiser</button>
+<pre id="dashboard"></pre>
+</div>
+
+<!-- MEMBRE -->
+<div class="card">
+<h2>Ajouter Membre</h2>
+<input id="nom" placeholder="Nom">
+<input id="tel" placeholder="Téléphone">
+<input id="montant" type="number" placeholder="Montant">
+<button onclick="addMembre()">Envoyer</button>
+</div>
+
+<!-- COTISATION -->
+<div class="card">
+<h2>Ajouter Cotisation</h2>
+<input id="membre_id" placeholder="ID membre">
+<input id="montant_c" type="number" placeholder="Montant">
+<input id="periode" placeholder="Période">
+<button onclick="addCotisation()">Envoyer</button>
+</div>
+
+<!-- DEPENSE -->
+<div class="card">
+<h2>Ajouter Dépense</h2>
+<input id="motif" placeholder="Motif">
+<input id="montant_d" type="number" placeholder="Montant">
+<input id="par" placeholder="Validé par">
+<button onclick="addDepense()">Envoyer</button>
+</div>
+
+<script>
+
+const API = "";
+
+// DASHBOARD
+async function loadDashboard(){
+    const res = await fetch(API + "/dashboard");
+    const data = await res.json();
+    document.getElementById("dashboard").textContent = JSON.stringify(data, null, 2);
+}
+
+// MEMBRE
+async function addMembre(){
+    await fetch(API + "/membre", {
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({
+            nom: document.getElementById("nom").value,
+            tel: document.getElementById("tel").value,
+            montant: Number(document.getElementById("montant").value)
+        })
+    });
+    alert("Membre ajouté");
+}
+
+// COTISATION
+async function addCotisation(){
+    await fetch(API + "/cotisation", {
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({
+            membre_id: Number(document.getElementById("membre_id").value),
+            montant: Number(document.getElementById("montant_c").value),
+            periode: document.getElementById("periode").value
+        })
+    });
+    alert("Cotisation ajoutée");
+}
+
+// DEPENSE
+async function addDepense(){
+    await fetch(API + "/depense", {
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({
+            motif: document.getElementById("motif").value,
+            montant: Number(document.getElementById("montant_d").value),
+            par: document.getElementById("par").value
+        })
+    });
+    alert("Dépense ajoutée");
+}
+
+</script>
+
+</body>
+</html>
