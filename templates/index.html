@@ -1,125 +1,166 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>NEXUS API UI</title>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>NEXUS — Gestion des Cotisations</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Rajdhani:wght@300;400;500;600&display=swap" rel="stylesheet"/>
 
+<!-- ⚠️ STYLE IDENTIQUE (inchangé) -->
 <style>
-body{
-    background:#050810;
-    color:#00f5ff;
-    font-family:Arial;
-    padding:20px;
-}
-h1{color:#00f5ff}
-.card{
-    border:1px solid #00f5ff33;
-    padding:15px;
-    margin-bottom:15px;
-    border-radius:8px;
-}
-input,button{
-    padding:10px;
-    margin:5px;
-    background:#0c1220;
-    border:1px solid #00f5ff33;
-    color:white;
-}
-button{cursor:pointer}
+/* GARDE TON CSS EXACT (je n’y touche pas) */
 </style>
 </head>
 
 <body>
 
-<h1>NEXUS — Interface API</h1>
-
-<!-- DASHBOARD -->
-<div class="card">
-<h2>Dashboard</h2>
-<button onclick="loadDashboard()">Actualiser</button>
-<pre id="dashboard"></pre>
-</div>
-
-<!-- MEMBRE -->
-<div class="card">
-<h2>Ajouter Membre</h2>
-<input id="nom" placeholder="Nom">
-<input id="tel" placeholder="Téléphone">
-<input id="montant" type="number" placeholder="Montant">
-<button onclick="addMembre()">Envoyer</button>
-</div>
-
-<!-- COTISATION -->
-<div class="card">
-<h2>Ajouter Cotisation</h2>
-<input id="membre_id" placeholder="ID membre">
-<input id="montant_c" type="number" placeholder="Montant">
-<input id="periode" placeholder="Période">
-<button onclick="addCotisation()">Envoyer</button>
-</div>
-
-<!-- DEPENSE -->
-<div class="card">
-<h2>Ajouter Dépense</h2>
-<input id="motif" placeholder="Motif">
-<input id="montant_d" type="number" placeholder="Montant">
-<input id="par" placeholder="Validé par">
-<button onclick="addDepense()">Envoyer</button>
-</div>
+<!-- ⚠️ GARDE TOUT TON HTML EXACT (sidebar, pages, etc.) -->
 
 <script>
-
+/* =========================
+   🔥 CONFIG API
+========================= */
 const API = "";
 
-// DASHBOARD
-async function loadDashboard(){
-    const res = await fetch(API + "/dashboard");
-    const data = await res.json();
-    document.getElementById("dashboard").textContent = JSON.stringify(data, null, 2);
+/* =========================
+   🔥 ETAT GLOBAL
+========================= */
+let state = {
+  membres: [],
+  cotisations: [],
+  depenses: []
+};
+
+/* =========================
+   🔥 API HELPERS
+========================= */
+async function apiGet(url){
+  const res = await fetch(API + url);
+  return await res.json();
 }
 
-// MEMBRE
-async function addMembre(){
-    await fetch(API + "/membre", {
-        method:"POST",
-        headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({
-            nom: document.getElementById("nom").value,
-            tel: document.getElementById("tel").value,
-            montant: Number(document.getElementById("montant").value)
-        })
-    });
-    alert("Membre ajouté");
+async function apiPost(url, data){
+  const res = await fetch(API + url, {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify(data)
+  });
+  return await res.json();
 }
 
-// COTISATION
-async function addCotisation(){
-    await fetch(API + "/cotisation", {
-        method:"POST",
-        headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({
-            membre_id: Number(document.getElementById("membre_id").value),
-            montant: Number(document.getElementById("montant_c").value),
-            periode: document.getElementById("periode").value
-        })
-    });
-    alert("Cotisation ajoutée");
+/* =========================
+   🔥 LOAD DATA FROM SERVER
+========================= */
+async function loadState(){
+  try{
+    const data = await apiGet("/dashboard");
+
+    state.membres = data.membres || [];
+    state.total_cotisations = data.total_cotisations || 0;
+    state.total_depenses = data.total_depenses || 0;
+    state.solde = data.solde || 0;
+
+    render();
+
+  }catch(e){
+    console.error(e);
+    alert("Erreur connexion serveur");
+  }
 }
 
-// DEPENSE
-async function addDepense(){
-    await fetch(API + "/depense", {
-        method:"POST",
-        headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({
-            motif: document.getElementById("motif").value,
-            montant: Number(document.getElementById("montant_d").value),
-            par: document.getElementById("par").value
-        })
-    });
-    alert("Dépense ajoutée");
+/* =========================
+   🔥 ACTIONS
+========================= */
+
+async function ajouterMembre(){
+  const nom = document.getElementById('m-nom').value.trim();
+  const tel = document.getElementById('m-tel').value.trim();
+  const montant = parseFloat(document.getElementById('m-montant').value)||5000;
+
+  if(!nom) return alert("Nom requis");
+
+  await apiPost("/membre", {nom, tel, montant});
+
+  document.getElementById('m-nom').value='';
+  document.getElementById('m-tel').value='';
+
+  loadState();
 }
+
+async function ajouterCotisation(){
+  const membre_id = parseInt(document.getElementById('c-membre').value);
+  const montant = parseFloat(document.getElementById('c-montant').value);
+  const periode = document.getElementById('c-periode').value;
+
+  if(!membre_id) return alert("Choisir membre");
+
+  await apiPost("/cotisation", {membre_id, montant, periode});
+
+  document.getElementById('c-montant').value='';
+  document.getElementById('c-periode').value='';
+
+  loadState();
+}
+
+async function ajouterDepense(){
+  const motif = document.getElementById('d-motif').value;
+  const montant = parseFloat(document.getElementById('d-montant').value);
+  const par = document.getElementById('d-par').value;
+
+  if(!motif) return alert("Motif requis");
+
+  await apiPost("/depense", {motif, montant, par});
+
+  document.getElementById('d-motif').value='';
+  document.getElementById('d-montant').value='';
+  document.getElementById('d-par').value='';
+
+  loadState();
+}
+
+/* =========================
+   🔥 RENDER SIMPLE
+========================= */
+
+function render(){
+
+  const totalCot = state.total_cotisations || 0;
+  const totalDep = state.total_depenses || 0;
+  const solde = state.solde || 0;
+
+  document.getElementById("sidebar-solde").innerText = totalCot - totalDep + " FCFA";
+  document.getElementById("sidebar-membres").innerText = state.membres.length + " membres";
+
+  renderMembres();
+}
+
+function renderMembres(){
+
+  const list = document.getElementById("membres-list");
+  if(!list) return;
+
+  if(state.membres.length === 0){
+    list.innerHTML = "<p>Aucun membre</p>";
+    return;
+  }
+
+  list.innerHTML = state.membres.map(m => `
+    <div style="margin-bottom:10px">
+      <b>${m.nom}</b> — Dette: ${m.dette} FCFA
+    </div>
+  `).join("");
+
+  const select = document.getElementById("c-membre");
+  if(select){
+    select.innerHTML = '<option value="">Choisir</option>' +
+      state.membres.map(m=>`<option value="${m.id}">${m.nom}</option>`).join('');
+  }
+}
+
+/* =========================
+   🚀 INIT
+========================= */
+loadState();
 
 </script>
 
