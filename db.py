@@ -1,42 +1,53 @@
 import sqlite3
+import os
+
+DB_NAME = "database.db"
 
 def get_db():
-    return sqlite3.connect("nexus.db")
+    conn = sqlite3.connect(DB_NAME)
+    conn.row_factory = sqlite3.Row  # permet d'utiliser dict-like
+    return conn
 
 def init_db():
-    conn = get_db()
-    cur = conn.cursor()
+    # créer le dossier si besoin
+    if not os.path.exists(DB_NAME):
+        conn = get_db()
+        cur = conn.cursor()
 
-    cur.execute("""
-    CREATE TABLE IF NOT EXISTS membres (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        nom TEXT NOT NULL,
-        tel TEXT,
-        montant REAL NOT NULL,
-        actif INTEGER DEFAULT 1,
-        date TEXT NOT NULL
-    )
-    """)
+        # TABLE MEMBRES
+        cur.execute("""
+        CREATE TABLE membres (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            nom TEXT NOT NULL,
+            tel TEXT,
+            montant INTEGER NOT NULL,
+            actif INTEGER DEFAULT 1,
+            date TEXT
+        )
+        """)
 
-    cur.execute("""
-    CREATE TABLE IF NOT EXISTS cotisations (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        membre_id INTEGER,
-        montant REAL,
-        periode TEXT,
-        date TEXT
-    )
-    """)
+        # TABLE COTISATIONS
+        cur.execute("""
+        CREATE TABLE cotisations (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            membre_id INTEGER,
+            montant INTEGER,
+            periode TEXT,
+            date TEXT,
+            FOREIGN KEY (membre_id) REFERENCES membres(id)
+        )
+        """)
 
-    cur.execute("""
-    CREATE TABLE IF NOT EXISTS depenses (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        motif TEXT,
-        montant REAL,
-        par TEXT,
-        date TEXT
-    )
-    """)
+        # TABLE DEPENSES
+        cur.execute("""
+        CREATE TABLE depenses (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            motif TEXT,
+            montant INTEGER,
+            par TEXT,
+            date TEXT
+        )
+        """)
 
-    conn.commit()
-    conn.close()
+        conn.commit()
+        conn.close()
